@@ -1,6 +1,7 @@
 # coding: utf-8
 
 from __future__ import unicode_literals
+
 from collections import Iterable
 from time import time
 
@@ -21,7 +22,6 @@ from .utils import (
     UncachableQuery, is_cachable, filter_cachable,
 )
 
-
 WRITE_COMPILERS = (SQLInsertCompiler, SQLUpdateCompiler, SQLDeleteCompiler)
 
 
@@ -31,6 +31,7 @@ def _unset_raw_connection(original):
         out = original(compiler, *args, **kwargs)
         compiler.connection.raw = True
         return out
+
     return inner
 
 
@@ -156,9 +157,10 @@ def _patch_atomic():
         @wraps(original)
         def inner(self, exc_type, exc_value, traceback):
             needs_rollback = get_connection(self.using).needs_rollback
-            original(self, exc_type, exc_value, traceback)
-            cachalot_caches.exit_atomic(
-                self.using, exc_type is None and not needs_rollback)
+            try:
+                original(self, exc_type, exc_value, traceback)
+            finally:
+                cachalot_caches.exit_atomic(self.using, exc_type is None and not needs_rollback)
 
         return inner
 
